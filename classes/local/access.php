@@ -44,6 +44,22 @@ final class access {
     public const CAP_DOWNLOAD_AUTOMATED = 'local/backupdownloader:downloadautomated';
 
     /**
+     * Whether the context is frozen, directly or through a parent category or the site.
+     *
+     * context::is_locked() ignores the contextlocking setting, while has_capability() only
+     * blocks write capabilities when it is enabled. Both are checked so that a context keeping
+     * its lock flag after the feature has been disabled is not considered frozen.
+     *
+     * @param course_context $context
+     * @return bool
+     */
+    public static function is_frozen(course_context $context): bool {
+        global $CFG;
+
+        return !empty($CFG->contextlocking) && $context->is_locked();
+    }
+
+    /**
      * Whether the user may see the page and download course and section backups.
      *
      * @param course_context $context

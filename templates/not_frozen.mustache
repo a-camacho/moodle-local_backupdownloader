@@ -1,0 +1,39 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_backupdownloader/not_frozen
+
+    Notice shown on the backup downloads page when the course is not frozen.
+
+    Context variables required for this template:
+    * restoreurl - URL of the core restore page, or null when the user cannot restore the course.
+    * courseurl - URL of the course home page.
+
+    Example context (json):
+    {
+        "restoreurl": "https://example.com/backup/restorefile.php?contextid=42",
+        "courseurl": "https://example.com/course/view.php?id=2"
+    }
+}}
+<div class="local-backupdownloader-notfrozen">
+    <div class="alert alert-info" role="alert">{{#str}} notfrozen, local_backupdownloader {{/str}}</div>
+
+    {{#restoreurl}}
+    <a href="{{restoreurl}}" class="btn btn-primary">{{#str}} gotorestore, local_backupdownloader {{/str}}</a>
+    {{/restoreurl}}
+    <a href="{{courseurl}}" class="btn btn-secondary">{{#str}} backtocourse, local_backupdownloader {{/str}}</a>
+</div>

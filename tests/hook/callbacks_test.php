@@ -53,24 +53,53 @@ final class callbacks_test extends \advanced_testcase {
     }
 
     /**
-     * The node is added for users holding moodle/backup:downloadfile.
+     * Give the user a role holding the plugin download capability in the course.
+     *
+     * @param \stdClass $user
+     * @param \stdClass $course
+     * @return void
      */
-    public function test_node_added_for_teacher(): void {
+    private function grant_plugin_capability(\stdClass $user, \stdClass $course): void {
+        $roleid = $this->getDataGenerator()->create_role();
+        assign_capability(access::CAP_DOWNLOAD, CAP_ALLOW, $roleid, system_context::instance()->id, true);
+        role_assign($roleid, $user->id, course_context::instance($course->id)->id);
+        accesslib_clear_all_caches_for_unit_testing();
+    }
+
+    /**
+     * Outside frozen contexts the core restore page lists the backups, so no node is added.
+     */
+    public function test_node_not_added_when_not_frozen(): void {
         $this->resetAfterTest();
 
         $course = $this->getDataGenerator()->create_course();
         $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        $this->grant_plugin_capability($teacher, $course);
         $this->setUser($teacher);
 
         $view = $this->run_callback_for_course($course);
-        $node = $view->find(callbacks::NAV_KEY, \navigation_node::TYPE_CUSTOM);
 
-        $this->assertNotFalse($node);
-        $this->assertSame(get_string('pluginname', 'local_backupdownloader'), $node->text);
-        $this->assertStringContainsString(
-            '/local/backupdownloader/index.php?id=' . $course->id,
-            $node->action->out(false),
-        );
+        $this->assertFalse($view->find(callbacks::NAV_KEY, \navigation_node::TYPE_CUSTOM));
+    }
+
+    /**
+     * A lock flag left on the course after context freezing has been disabled does not count.
+     */
+    public function test_node_not_added_when_context_locking_disabled(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->grant_plugin_capability($user, $course);
+        $this->setUser($user);
+
+        set_config('contextlocking', 1);
+        course_context::instance($course->id)->set_locked(true);
+        set_config('contextlocking', 0);
+
+        $view = $this->run_callback_for_course($course);
+
+        $this->assertFalse($view->find(callbacks::NAV_KEY, \navigation_node::TYPE_CUSTOM));
     }
 
     /**
@@ -113,17 +142,38 @@ final class callbacks_test extends \advanced_testcase {
         $this->resetAfterTest();
 
         $course = $this->getDataGenerator()->create_course();
-        $context = course_context::instance($course->id);
         $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->grant_plugin_capability($user, $course);
         $this->setUser($user);
 
-        $roleid = $this->getDataGenerator()->create_role();
-        assign_capability(access::CAP_DOWNLOAD, CAP_ALLOW, $roleid, system_context::instance()->id, true);
-        role_assign($roleid, $user->id, $context->id);
-        accesslib_clear_all_caches_for_unit_testing();
+        set_config('contextlocking', 1);
+        course_context::instance($course->id)->set_locked(true);
+
+        $view = $this->run_callback_for_course($course);
+        $node = $view->find(callbacks::NAV_KEY, \navigation_node::TYPE_CUSTOM);
+
+        $this->assertNotFalse($node);
+        $this->assertSame(get_string('pluginname', 'local_backupdownloader'), $node->text);
+        $this->assertStringContainsString(
+            '/local/backupdownloader/index.php?id=' . $course->id,
+            $node->action->out(false),
+        );
+    }
+
+    /**
+     * Freezing the parent category freezes the course too.
+     */
+    public function test_node_added_when_category_frozen(): void {
+        $this->resetAfterTest();
+
+        $category = $this->getDataGenerator()->create_category();
+        $course = $this->getDataGenerator()->create_course(['category' => $category->id]);
+        $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->grant_plugin_capability($user, $course);
+        $this->setUser($user);
 
         set_config('contextlocking', 1);
-        $context->set_locked(true);
+        \core\context\coursecat::instance($category->id)->set_locked(true);
 
         $view = $this->run_callback_for_course($course);
 
@@ -151,8 +201,12 @@ final class callbacks_test extends \advanced_testcase {
         $this->resetAfterTest();
 
         $course = $this->getDataGenerator()->create_course();
-        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
-        $this->setUser($teacher);
+        $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->grant_plugin_capability($user, $course);
+        $this->setUser($user);
+
+        set_config('contextlocking', 1);
+        course_context::instance($course->id)->set_locked(true);
 
         $PAGE->set_course($course);
         $PAGE->set_url('/course/view.php', ['id' => $course->id]);

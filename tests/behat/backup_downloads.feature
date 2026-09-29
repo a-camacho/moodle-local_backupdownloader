@@ -20,11 +20,15 @@ Feature: Download course backup files
       | enableasyncbackup | 0 |
 
   @javascript
-  Scenario: A teacher sees the tab, the backup file and a download link
+  Scenario: A teacher granted the plugin capability sees the tab, the backup file and a download link in a frozen course
     # Editing teachers lack moodle/backup:userinfo, so their backups land in the private area.
     Given I am on the "Course 1" "Course" page logged in as "teacher1"
     And I backup "Course 1" course using this options:
       | Confirmation | Filename | test_backup.mbz |
+    And the "C1" course is frozen
+    And the following "role capabilities" exist:
+      | role           | local/backupdownloader:download |
+      | editingteacher | allow                           |
     When I am on the "Course 1" "Course" page
     And I navigate to "Backup downloads" in current page administration
     Then I should see "Backup downloads"
@@ -33,15 +37,40 @@ Feature: Download course backup files
     And I should see "No backup files are available in the course backup area."
     And following "Download" should download between "1000" and "10000000" bytes
 
-  Scenario: A teacher without backups sees the empty state
-    Given I am on the "C1" "local_backupdownloader > Backup downloads" page logged in as "teacher1"
+  Scenario: A teacher without backups sees the empty state in a frozen course
+    Given the "C1" course is frozen
+    And the following "role capabilities" exist:
+      | role           | local/backupdownloader:download |
+      | editingteacher | allow                           |
+    When I am on the "C1" "local_backupdownloader > Backup downloads" page logged in as "teacher1"
     Then I should see "No backup files are available in the course backup area."
     And I should see "No backup files are available in your private backup area."
     And "Download" "link" should not exist
 
   Scenario: A student does not see the tab
-    Given I am on the "Course 1" "Course" page logged in as "student1"
+    Given the "C1" course is frozen
+    When I am on the "Course 1" "Course" page logged in as "student1"
     Then "Backup downloads" "link" should not exist in the ".secondary-navigation" "css_element"
+
+  Scenario: Outside frozen contexts the tab is hidden and the page points to the restore page
+    Given I am on the "Course 1" "Course" page logged in as "teacher1"
+    Then "Backup downloads" "link" should not exist in the ".secondary-navigation" "css_element"
+    When I am on the "C1" "local_backupdownloader > Backup downloads" page
+    Then I should see "This page is only available when the course is frozen."
+    And "Back to course" "link" should exist
+    And "Filename" "table" should not exist
+    And I click on "Go to restore page" "link"
+    And I should see "Course backup area"
+
+  Scenario: Outside frozen contexts a user who cannot restore the course is only offered the way back
+    Given the following "role capabilities" exist:
+      | role    | local/backupdownloader:download |
+      | student | allow                           |
+    When I am on the "C1" "local_backupdownloader > Backup downloads" page logged in as "student1"
+    Then I should see "This page is only available when the course is frozen."
+    And "Go to restore page" "link" should not exist
+    And I click on "Back to course" "link"
+    And I should see "Course 1" in the "page-header" "region"
 
   @javascript
   Scenario: A teacher loses the tab in a frozen course unless granted the plugin capability

@@ -19,6 +19,7 @@
  *
  * pluginfile.php enforces write capabilities that context freezing blocks, so the plugin
  * streams the files itself after applying its own access rules (see backup_finder::can_serve()).
+ * Files are served in frozen contexts only; elsewhere the core restore page links them.
  *
  * @package    local_backupdownloader
  * @copyright  2026 André Camacho
@@ -28,6 +29,7 @@
 declare(strict_types=1);
 
 use core\context\course as course_context;
+use local_backupdownloader\local\access;
 use local_backupdownloader\local\backup_finder;
 
 require(__DIR__ . '/../../config.php');
@@ -49,7 +51,7 @@ $PAGE->set_context($context);
 $file = get_file_storage()->get_file_by_id($fileid);
 $finder = new backup_finder($context, $USER);
 
-if ($file === false || !$finder->can_serve($file)) {
+if (!access::is_frozen($context) || $file === false || !$finder->can_serve($file)) {
     send_file_not_found();
 }
 

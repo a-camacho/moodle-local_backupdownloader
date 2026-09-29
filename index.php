@@ -61,6 +61,23 @@ $PAGE->set_title(implode(moodle_page::TITLE_SEPARATOR, [
 $PAGE->set_heading($course->fullname);
 $PAGE->set_secondary_active_tab(callbacks::NAV_KEY);
 
+// Outside frozen contexts the core restore page lists and serves the backup files.
+if (!access::is_frozen($context)) {
+    $restoreurl = null;
+    if (has_capability('moodle/restore:restorecourse', $context)) {
+        $restoreurl = (new moodle_url('/backup/restorefile.php', ['contextid' => $context->id]))->out(false);
+    }
+
+    echo $OUTPUT->header();
+    echo $OUTPUT->heading($title);
+    echo $OUTPUT->render_from_template('local_backupdownloader/not_frozen', [
+        'restoreurl' => $restoreurl,
+        'courseurl' => (new moodle_url('/course/view.php', ['id' => $course->id]))->out(false),
+    ]);
+    echo $OUTPUT->footer();
+    exit;
+}
+
 backup_list_viewed::create(['context' => $context])->trigger();
 
 $finder = new backup_finder($context, $USER);

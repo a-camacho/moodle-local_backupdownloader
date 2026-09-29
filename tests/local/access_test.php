@@ -200,4 +200,31 @@ final class access_test extends \advanced_testcase {
         $this->assertTrue(access::can_download_private_backups($user));
         $this->assertFalse(access::can_download_private_backups(guest_user()));
     }
+
+    /**
+     * A course is frozen when it, its category or the site is locked, and only while context freezing is enabled.
+     */
+    public function test_is_frozen(): void {
+        $this->resetAfterTest();
+
+        $category = $this->getDataGenerator()->create_category();
+        $course = $this->getDataGenerator()->create_course(['category' => $category->id]);
+        $context = course_context::instance($course->id);
+        $categorycontext = \core\context\coursecat::instance($category->id);
+
+        $this->assertFalse(access::is_frozen($context));
+
+        $this->freeze($context);
+        $this->assertTrue(access::is_frozen($context));
+
+        set_config('contextlocking', 0);
+        $this->assertFalse(access::is_frozen($context));
+
+        set_config('contextlocking', 1);
+        $context->set_locked(false);
+        $this->assertFalse(access::is_frozen($context));
+
+        $categorycontext->set_locked(true);
+        $this->assertTrue(access::is_frozen(course_context::instance($course->id)));
+    }
 }

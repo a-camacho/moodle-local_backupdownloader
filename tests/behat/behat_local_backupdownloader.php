@@ -51,4 +51,16 @@ class behat_local_backupdownloader extends behat_base {
                 throw new Exception("Unrecognised page type '{$page}'");
         }
     }
+
+    /**
+     * Enable context freezing and freeze a course.
+     *
+     * @Given /^the "(?P<shortname_string>(?:[^"]|\\")*)" course is frozen$/
+     * @param string $shortname Course shortname.
+     * @return void
+     */
+    public function the_course_is_frozen(string $shortname): void {
+        set_config('contextlocking', 1);
+        \core\context\course::instance($this->get_course_id($shortname))->set_locked(true);
+    }
 }

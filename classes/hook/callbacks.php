@@ -40,9 +40,10 @@ final class callbacks {
      * Core dispatches {@see secondary_extend} at the end of the course navigation build,
      * which also runs for the front page and for the module-context home page of
      * single-activity courses. The node is therefore added only for a real course
-     * context (single-activity courses never get the tab), and only when the current
-     * user may download backup files from this course through either the core capability
-     * or the plugin one (see {@see access}).
+     * context (single-activity courses never get the tab) that is frozen, and only when
+     * the current user may download backup files from this course through either the core
+     * capability or the plugin one (see {@see access}). Outside frozen contexts the core
+     * restore page already lists the backup files.
      *
      * @param secondary_extend $hook The hook instance carrying the secondary navigation view.
      * @return void
@@ -60,7 +61,7 @@ final class callbacks {
             return;
         }
 
-        if (!access::can_download_course_backups($context)) {
+        if (!access::is_frozen($context) || !access::can_download_course_backups($context)) {
             return;
         }
 
