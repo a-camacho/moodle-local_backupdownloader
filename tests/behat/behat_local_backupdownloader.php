@@ -63,4 +63,26 @@ class behat_local_backupdownloader extends behat_base {
         set_config('contextlocking', 1);
         \core\context\course::instance($this->get_course_id($shortname))->set_locked(true);
     }
+
+    /**
+     * Store a file in the automated backup area of a course, as the automated backup task would.
+     *
+     * The content is a placeholder: the plugin lists and serves the file without reading it.
+     *
+     * @Given /^the automated backup "(?P<filename_string>(?:[^"]|\\")*)" exists in course "(?P<shortname_string>(?:[^"]|\\")*)"$/
+     * @param string $filename File name, including the .mbz extension.
+     * @param string $shortname Course shortname.
+     * @return void
+     */
+    public function the_automated_backup_exists(string $filename, string $shortname): void {
+        $context = \core\context\course::instance($this->get_course_id($shortname));
+        get_file_storage()->create_file_from_string([
+            'contextid' => $context->id,
+            'component' => 'backup',
+            'filearea' => 'automated',
+            'itemid' => 0,
+            'filepath' => '/',
+            'filename' => $filename,
+        ], str_repeat('x', 2048));
+    }
 }

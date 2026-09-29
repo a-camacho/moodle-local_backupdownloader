@@ -37,6 +37,25 @@ Feature: Download course backup files
     And I should see "No backup files are available in the course backup area."
     And following "Download" should download between "1000" and "10000000" bytes
 
+  @javascript
+  Scenario: Automated backups of a frozen course require both plugin capabilities
+    Given the automated backup "automated_backup.mbz" exists in course "C1"
+    And the "C1" course is frozen
+    And the following "role capabilities" exist:
+      | role           | local/backupdownloader:download |
+      | editingteacher | allow                           |
+    When I am on the "C1" "local_backupdownloader > Backup downloads" page logged in as "teacher1"
+    Then "automated_backup.mbz" "table_row" should not exist
+    And I should see "No backup files are available in the course backup area."
+    And I log out
+    And the following "role capabilities" exist:
+      | role           | local/backupdownloader:downloadautomated |
+      | editingteacher | allow                                    |
+    When I am on the "C1" "local_backupdownloader > Backup downloads" page logged in as "teacher1"
+    Then "automated_backup.mbz" "table_row" should exist
+    And I should see "Automated backup" in the "automated_backup.mbz" "table_row"
+    And following "Download" should download between "2048" and "2048" bytes
+
   Scenario: A teacher without backups sees the empty state in a frozen course
     Given the "C1" course is frozen
     And the following "role capabilities" exist:
