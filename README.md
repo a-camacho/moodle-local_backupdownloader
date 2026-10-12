@@ -30,9 +30,9 @@ The plugin therefore only acts in frozen contexts (the course itself, its catego
 | `local/backupdownloader:download` | The tab plus course and section backups |
 | `local/backupdownloader:downloadautomated` | Automated backups (needs `download` as well) |
 
-They are not granted to any role by default. Backups may contain personal data, so assign them deliberately (for instance to a copy of the *Editing teacher* role, or as an override on the frozen category) via *Site administration → Users → Permissions → Define roles*.
+They are not granted to any role by default, so **the plugin does nothing for non-administrators until you grant one of them**: in a frozen context the tab and the downloads stay hidden even though the plugin is installed. Backups may contain personal data, so assign them deliberately (for instance to a copy of the *Editing teacher* role, or as an override on the frozen category) via *Site administration → Users → Permissions → Define roles*.
 
-Site administrators keep the core capabilities in frozen contexts, and therefore the tab, unless *Context freezing applies to administrators* (`contextlockappliestoadmin`) is enabled.
+Site administrators keep the core capabilities in frozen contexts, and therefore the tab, unless *Context freezing applies to administrators* (`contextlockappliestoadmin`) is enabled. Because of this, an administrator testing the plugin sees the tab even when no plugin capability has been granted yet — so check with a non-admin test user (or after assigning the capability) to confirm teachers can actually reach it.
 
 When the course is not frozen, the page shows a notice instead of the list, with a **Go to restore page** button (only for users holding `moodle/restore:restorecourse`) and a **Back to course** button, and `download.php` refuses every file.
 
@@ -57,7 +57,7 @@ Each visit of the page in a frozen context triggers the `\local_backupdownloader
    php admin/cli/purge_caches.php
    ```
 
-3. Grant `local/backupdownloader:download` (and optionally `local/backupdownloader:downloadautomated`) to the roles that need it, then open a frozen course: a **Backup downloads** tab appears in the course navigation. The page is also reachable at `/local/backupdownloader/index.php?id=<courseid>` (the front page is not supported).
+3. Grant `local/backupdownloader:download` (and optionally `local/backupdownloader:downloadautomated`) to the roles that need it. **This step is required** — the plugin stays invisible to non-administrators until a role holds the capability. Then open a frozen course: a **Backup downloads** tab appears in the course navigation. The page is also reachable at `/local/backupdownloader/index.php?id=<courseid>` (the front page is not supported).
 
 ## Tests
 
